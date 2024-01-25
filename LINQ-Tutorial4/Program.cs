@@ -1,5 +1,32 @@
 ﻿/*
 * https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/standard-query-operators-overview
+* 
+* *** SORTING OPERATORS ***
+* - OrderBy, OrderByDescending
+* - ThenBy, ThenByDescending
+* 
+* *** GROUPING OPERATORS ***
+* - GroupBy (deffered)
+* - ToLookup (immediate)
+* 
+* *** QUANTIFIER OPERATORS ***
+* - All
+* - Any
+* - Contains
+* 
+* *** FILTER OPERATORS ***
+* - OfType
+* - Where
+* 
+* *** ELEMENT OPERATORS ***
+* - ElementAt
+* - ElementAtOrDefault
+* - First
+* - FirstOrDefault
+* - Last
+* - LastOrDefault
+* - Single
+* - SingleOrDefault
 */
 
 internal class Program
