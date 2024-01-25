@@ -1,33 +1,66 @@
 ﻿/*
 * https://learn.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/linq/standard-query-operators-overview
 * 
-* *** SORTING OPERATORS ***
+* ***** SORTING OPERATORS *****
+* 
 * - OrderBy, OrderByDescending
+* 
 * - ThenBy, ThenByDescending
 * 
-* *** GROUPING OPERATORS ***
+* 
+* 
+* ***** GROUPING OPERATORS *****
+* 
 * - GroupBy (deffered)
+* 
 * - ToLookup (immediate)
 * 
-* *** QUANTIFIER OPERATORS ***
-* - All
-* - Any
-* - Contains
 * 
-* *** FILTER OPERATORS ***
-* - OfType
+* 
+* ***** QUANTIFIER OPERATORS *****
+* 
+* - All = returns true if all records meet the conditions
+* 
+* - Any = returns true if at least one record meets the conditon
+* 
+* - Contains = returns true if collection contains searched item
+*            = Comparer class implementing IEqualityComparer<ComparedObject> has to be implemented in order to let the compiler know 
+*              how to uniquely identify object (GetHashCode(obj x))
+*              and how to determine wether two objects are equal (Equals(obj x, obj y))
+*            = Instance of Comparer Class has to be then passed to Contains operator as argument
+* 
+* 
+* 
+* ***** FILTER OPERATORS *****
+* 
+* - OfType = is useful when I have Heterogeneous Data Collections (Collection containing different data types)
+*          = filters records based on their data type
+*          
 * - Where
 * 
-* *** ELEMENT OPERATORS ***
+* 
+* 
+* ***** ELEMENT OPERATORS *****
+* 
 * - ElementAt
+* 
 * - ElementAtOrDefault
+* 
 * - First
+* 
 * - FirstOrDefault
+* 
 * - Last
+* 
 * - LastOrDefault
+* 
 * - Single
+* 
 * - SingleOrDefault
+* 
 */
+
+using System.Diagnostics.CodeAnalysis;
 
 internal class Program
 {
@@ -53,12 +86,12 @@ internal class Program
         foreach (var result in methodSortingResults)
         {
             Console.WriteLine(
-                $"Id: {result.Id, -5}" +
+                $"Id: {result.Id,-5}" +
                 $"First Name: {result.FirstName,-10} " +
                 $"Last Name: {result.LastName,-10} " +
                 $"Annual Salary: {result.AnnualSalary,-10}" +
-                $"\tDepartment Id: {result.DepartmentId, -10}" +
-                $"Department Name: {result.DepartmentName, -10}"
+                $"\tDepartment Id: {result.DepartmentId,-10}" +
+                $"Department Name: {result.DepartmentName,-10}"
                 );
         }
         Console.WriteLine("\n");
@@ -135,22 +168,175 @@ internal class Program
 
         Console.WriteLine("\n");
 
-        /***** Quantifier operators *****/
+        /***** Quantifier operators - All and Any return boolean value *****/
+        /* All() - If all records satisfy the condition, All() returns true */
+        var annualSalaryCompare = 200000;
 
+        bool isTrueAll = employeeList.All(e => e.AnnualSalary > annualSalaryCompare);
+        if (isTrueAll)
+        {
+            Console.WriteLine($"All employees have annual salary higher than {annualSalaryCompare}");
+        }
+        else
+        {
+            Console.WriteLine($"Not all employees have annual salary higher than {annualSalaryCompare}");
+        }
 
+        /* Any() - If at least one record satisfies the condition, Any() returns true */
+        bool isTrueAny = employeeList.Any(e => e.AnnualSalary > annualSalaryCompare);
+        if (isTrueAny)
+        {
+            Console.WriteLine($"At least one employee has higher salary than {annualSalaryCompare}");
+        }
+        else
+        {
+            Console.WriteLine($"No employee has higher salary than {annualSalaryCompare}");
+        }
 
+        /* Contains() - returns true if any of the searched record matches any of the objects within the searched list */
+        /* I need to tell the compiler how to compare user defined objects, in this case employee */
 
+        var searchedEmployee = new Employee()
+        {
+            Id = 3,
+            FirstName = "Douglas",
+            LastName = "Roberts",
+            AnnualSalary = 40000.2m,
+            IsManager = false,
+            DepartmentId = 1,
+        };
 
-        /***** Filter operators *****/
+        bool containsEmployee = employeeList.Contains(searchedEmployee, new EmployeeComparer());
 
+        if (containsEmployee)
+        {
+            Console.WriteLine($"Employee record {searchedEmployee.FirstName} {searchedEmployee.LastName} was found!");
+        }
+        else
+        {
+            Console.WriteLine($"Employee record {searchedEmployee.FirstName} {searchedEmployee.LastName} was not found!");
+        }
 
+        Console.WriteLine("\n");
 
+        /***** Filter operators - Method syntax *****/
+        Console.WriteLine("***** Filter operators - Method syntax *****");
+
+        var methodFilteredResults = employeeList.OrderByDescending(e => e.AnnualSalary).Where(e => e.AnnualSalary < 50000);
+
+        foreach (var result in methodFilteredResults)
+        {
+            Console.WriteLine(
+                $"Id: {result.Id,-5}" +
+                $"First Name: {result.FirstName,-10} " +
+                $"Last Name: {result.LastName,-10} " +
+                $"Annual Salary: {result.AnnualSalary,-10}"
+            );
+        }
+
+        Console.WriteLine("\n");
+
+        /***** Filter operators - Query syntax *****/
+        Console.WriteLine("***** Filter operators - Query syntax *****");
+
+        var queryFilteredResults = from emp in employeeList
+                                   join dept in departmentList
+                                   on emp.DepartmentId equals dept.Id
+                                   where emp.AnnualSalary > 50000
+                                   orderby emp.LastName descending
+                                   select new
+                                   {
+                                       Id = emp.Id,
+                                       FullName = emp.FirstName + " " + emp.LastName,
+                                       AnnualSalary = emp.AnnualSalary,
+                                       DepartmentName = dept.ShortName
+                                   };
+     
+        foreach (var result in queryFilteredResults)
+        {
+            Console.WriteLine(
+                $"Id: {result.Id,-5}" +
+                $"Name: {result.FullName,-20} " +
+                $"Annual Salary: {result.AnnualSalary,-10}" +
+                $"Department: {result.DepartmentName}"
+            );
+        }
+
+        Console.WriteLine("\n");
 
 
         /***** Element operators *****/
+        Console.WriteLine("***** Element operators *****");
+
+        int position1 = 0;
+        int position2 = 60;
+
+        /* ElementAt() - returns record in collection at specified position - if the record doesnt exist, throws exception */
+        var employeeElementAt = employeeList.ElementAt(position1);
+        Console.WriteLine($"Employee at position {position1} has Id: {employeeElementAt.Id} is called {employeeElementAt.FirstName + " " + employeeElementAt.LastName}");
+
+        /* ElementAtOrDefault() - returns record in collection at specified position - 
+         * if the record doesnt exist, returns default value (null for objects and string, 0 for int etc.) */
+        var employeeElementAtOrDefault = employeeList.ElementAtOrDefault(position2);
+        if (employeeElementAtOrDefault != null)
+        {
+            Console.WriteLine($"Employee at position {position2} has Id: {employeeElementAtOrDefault.Id} is called {employeeElementAtOrDefault.FirstName + " " + employeeElementAtOrDefault.LastName}");
+        }
+        else
+        {
+            Console.WriteLine($"Employee at position {position2} doesn't exist!");
+        }
+
+        /* First, FirstOrDefault, Last, LastOrDefault - returns first or last element of a collection 
+                                                      - can specify condition, in which case return first or last item that meets the condition */
+        var employeeFirstOrDefault = employeeList.FirstOrDefault(a => !a.IsManager && a.AnnualSalary>=90000);
+        if (employeeFirstOrDefault != null)
+        {
+            Console.WriteLine($"First record found is {employeeFirstOrDefault.FirstName + " " + employeeFirstOrDefault.LastName}");
+        }
+        else
+        {
+            Console.WriteLine("No record was found.");
+        }
+        Console.WriteLine("\n");
+
+        /* Single, SingleOrDefault - returns element if it's the only one satysfying the condition 
+                                   - otherwise returns null or throws exception */
+
+        try {
+            var employeeSingleOrDefault = employeeList.SingleOrDefault(a => !a.IsManager && a.AnnualSalary >= 70000);
+            if (employeeSingleOrDefault != null)
+            {
+                Console.WriteLine($"Single record satisfying the condition is {employeeFirstOrDefault.FirstName + " " + employeeFirstOrDefault.LastName}");
+            }
+        }
+        catch (Exception e)
+        {
+            Console.WriteLine("None or more than one records satisfy the condition");
+        }
+        
+        Console.WriteLine("\n");
     }
 }
 
+public class EmployeeComparer : IEqualityComparer<Employee>
+{
+    /* Equals() defines how to determine whether the 2 objects are equal */
+    public bool Equals(Employee? x, Employee? y)
+    {
+        if(x.Id == y.Id)
+        {
+            return true;
+        }
+        return false;
+    }
+
+    /* GetHashCode() is used for uniquely identifiyng an object */
+    public int GetHashCode([DisallowNull] Employee obj)
+    {
+        return obj.Id.GetHashCode();
+    }
+}
 
 public class Department
 {
@@ -202,7 +388,7 @@ public static class Data
             LastName = "Roberts",
             AnnualSalary = 40000.2m,
             IsManager = false,
-            DepartmentId = 2,
+            DepartmentId = 1,
         };
         employees.Add(employee);
         employee = new Employee()
